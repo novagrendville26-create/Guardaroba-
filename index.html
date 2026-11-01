@@ -8,8 +8,6 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui;background:#f8f5f0;color:#222;overflow:hidden;height:100vh}
-
-/* --- CARICAMENTO CON ANTE --- */
 #loader{position:fixed;inset:0;background:#f8f5f0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .6s}
 #loader.hide{opacity:0;pointer-events:none}
 .wrap{position:relative;width:280px;height:380px;background:#e8e1d5;perspective:1000px;border:8px solid #d9cec0;overflow:hidden}
@@ -17,11 +15,8 @@ body{font-family:system-ui;background:#f8f5f0;color:#222;overflow:hidden;height:
 .door.right{right:0;left:auto;background:#cdbfb0;border-left:1px solid #cdbfb0;border-right:none}
 .open-left{transform:translateX(-100%)} .open-right{transform:translateX(100%)}
 .inside{position:absolute;inset:0;background:#fffdf9;display:flex;align-items:center;justify-content:center;letter-spacing:3px;font-size:14px}
-
-/* --- SWIPE PAGES --- */
 .pages{display:flex;width:400vw;height:calc(100vh - 80px);transition:transform .35s cubic-bezier(.32,.72,0,1);touch-action:pan-y}
 .page{width:100vw;height:100%;overflow-y:auto;padding-bottom:100px;flex-shrink:0}
-#app-content{height:100%}
 .h{padding:22px 24px 8px;font-size:26px;font-weight:300}
 .top-actions{padding:0 24px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .search{flex:1;min-width:180px;position:relative}
@@ -34,11 +29,53 @@ body{font-family:system-ui;background:#f8f5f0;color:#222;overflow:hidden;height:
 .row{display:flex;gap:14px;overflow:auto;padding-bottom:10px}
 .card{min-width:150px;width:150px;background:white;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px #0001;flex-shrink:0;cursor:pointer}
 .card img{width:100%;height:125px;object-fit:cover}.info{padding:8px 10px;font-size:11px}
-
-/* DOCK tipo iPhone */
 .dock{position:fixed;bottom:0;left:0;right:0;height:80px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid #e9e1d5;display:flex;justify-content:space-around;align-items:center;z-index:30;padding-bottom:8px}
 .dock button{border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;opacity:.5;cursor:pointer;transition:.2s}
-  function comprimiFoto(file, cb){
+.dock button.active{opacity:1;transform:scale(1.15)}
+.dock span.icon{font-size:22px}
+.dots{position:fixed;bottom:85px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:30}
+.dot{width:6px;height:6px;border-radius:50%;background:#ddd;transition:.2s}.dot.active{background:#222;width:18px;border-radius:3px}
+#modal,#detail{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow:auto;padding:20px}#modal.open,#detail.open{display:flex}
+.box{background:white;border-radius:20px;padding:22px;width:100%;max-width:420px;margin:auto}
+label{font-size:11px;font-weight:700;opacity:.6;margin-top:10px;display:block;text-transform:uppercase}
+input,select,textarea{width:100%;margin:6px 0 10px;padding:11px;border-radius:10px;border:1px solid #e0d8cc;font-size:13px}
+button.main{background:#2b2b2b;color:white;border:none;padding:12px;border-radius:12px;width:100%;margin-top:8px;cursor:pointer}
+button.ghost{background:none;border:none;width:100%;margin-top:10px;opacity:.5}
+button.danger{background:#ffe0e0;color:#a00;border:none;padding:10px;border-radius:10px;width:100%;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="loader"><div class="wrap"><div class="inside">GUARDAROBA</div><div class="door left" id="dL"></div><div class="door right" id="dR"></div></div><p style="margin-top:30px;letter-spacing:3px;font-size:12px;opacity:.6">CARICAMENTO...</p></div>
+<div class="pages" id="pages">
+  <div class="page" id="page0"><div class="h">Il tuo Armadio Virtuale</div><div class="top-actions"><div class="search"><input id="searchInput" placeholder="Cerca maglione, lana, blu..." oninput="render()"></div><button class="btn-add" onclick="openModal()">+ Aggiungi capo</button></div><div class="bar" id="bar"></div><div id="sections"></div></div>
+  <div class="page" id="page1"><div class="h">Manichino</div><p style="padding:0 24px;opacity:.6;font-size:13px">Clicca un capo per vestire il manichino</p><div style="display:flex;gap:12px;padding:16px 24px"><div style="flex:1;background:white;border-radius:18px;padding:12px;min-height:400px;box-shadow:0 4px 18px #0001" id="mannequinView">Il tuo outfit apparirà qui</div><div style="flex:1" id="mannequinList"></div></div></div>
+  <div class="page" id="page2"><div class="h">Lavatrice</div><p style="padding:0 24px;opacity:.6;font-size:13px">Raggruppati per lavaggio</p><div id="lavatriceView" style="padding:12px 24px"></div></div>
+  <div class="page" id="page3"><div class="h">Valigia</div><div id="valigiaView" style="padding:12px 24px"></div><div style="padding:0 24px;display:flex;gap:8px;flex-wrap:wrap"><button class="main" style="max-width:200px" onclick="exportValigia()">Esporta lista valigia</button><button class="main" style="max-width:200px" onclick="esportaGuardaroba()">📤 Esporta TUTTO per telefono</button><label class="main" style="max-width:200px;text-align:center;cursor:pointer">📥 Importa<input type="file" accept=".json" onchange="importaGuardaroba(event)" style="display:none"></label><button class="main" style="max-width:200px;background:#4caf50" onclick="ottimizzaArmadio()">🔧 Ottimizza telefono</button></div></div>
+</div>
+<div class="dots"><div class="dot active" id="dot0"></div><div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div></div>
+<div class="dock"><button class="active" onclick="goTo(0)"><span class="icon">👚</span>Armadio</button><button onclick="goTo(1)"><span class="icon">👗</span>Manichino</button><button onclick="goTo(2)"><span class="icon">🫧</span>Lavatrice</button><button onclick="goTo(3)"><span class="icon">🧳</span>Valigia</button></div>
+<div id="modal"><div class="box"><h3>Nuovo capo</h3><label>Foto capo *</label><input type="file" id="foto" accept="image/*"><label>Nome</label><input id="nome" placeholder="es. Maglione blu"><label>Categoria</label><select id="cat"><option>Top</option><option>Pantaloni</option><option>Gonne</option><option>Vestiti</option><option>Giacche</option><option>Intimo</option><option>Scarpe</option><option>Accessori</option></select><label>Foto etichetta</label><input type="file" id="fotoEtichetta" accept="image/*"><label>Materiali</label><input id="materiali" placeholder="100% lana"><label>Lavaggio</label><input id="lavaggio" placeholder="30° mano"><label>Note</label><textarea id="note"></textarea><label><input type="checkbox" id="inValigia"> Metti in valigia</label><button class="main" id="saveBtn" onclick="saveItem()">Salva</button><button class="ghost" onclick="closeModal()">Annulla</button></div></div>
+<div id="detail"><div class="box" id="detailContent"></div></div>
+<script>
+setTimeout(()=>{document.getElementById('dL').classList.add('open-left');document.getElementById('dR').classList.add('open-right');},900);
+setTimeout(()=>{document.getElementById('loader').classList.add('hide');setTimeout(()=>document.getElementById('loader').style.display='none',600);},2100);
+const CATS=["Top","Pantaloni","Gonne","Vestiti","Giacche","Intimo","Scarpe","Accessori"];
+// MIGRAZIONE VECCHIE CATEGORIE
+function migraCategoria(c){
+  if(c==="Maglie") return "Top";
+  if(c==="Calzature") return "Scarpe";
+  if(c==="Pigiami") return "Intimo";
+  return c;
+}
+let items=JSON.parse(localStorage.getItem('guardarobaFinale')||'[]').map(it=>{it.cat=migraCategoria(it.cat||"Top"); it.foto=it.foto||it.img||it.src||""; return it;});
+let tempCapo=null,tempEtichetta=null, manichino=[];
+let current=0;
+const pagesEl=document.getElementById('pages');
+function goTo(i){current=i; pagesEl.style.transform=`translateX(-${i*100}vw)`; document.querySelectorAll('.dock button').forEach((b,idx)=>b.classList.toggle('active',idx===i)); document.querySelectorAll('.dot').forEach((d,idx)=>d.classList.toggle('active',idx===i));}
+let startX=0;
+pagesEl.addEventListener('touchstart',e=>startX=e.touches[0].clientX,{passive:true});
+pagesEl.addEventListener('touchend',e=>{let diff=startX-e.changedTouches[0].clientX; if(Math.abs(diff)>80){ if(diff>0 && current<3) goTo(current+1); if(diff<0 && current>0) goTo(current-1); }});
+function comprimiFoto(file, cb){
   let r=new FileReader();
   r.onload=e=>{
     let img=new Image();
@@ -55,120 +92,9 @@ body{font-family:system-ui;background:#f8f5f0;color:#222;overflow:hidden;height:
   };
   r.readAsDataURL(file);
 }
-.dock button.active{opacity:1;transform:scale(1.15)}
-.dock span.icon{font-size:22px}
-.dots{position:fixed;bottom:85px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:30}
-.dot{width:6px;height:6px;border-radius:50%;background:#ddd;transition:.2s}.dot.active{background:#222;width:18px;border-radius:3px}
-.fab{position:fixed;bottom:92px;right:16px;width:56px;height:56px;border-radius:50%;background:#222;color:#fff;font-size:28px;border:none;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:31;cursor:pointer}
-
-#modal,#detail{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow:auto;padding:20px}#modal.open,#detail.open{display:flex}
-.box{background:white;border-radius:20px;padding:22px;width:100%;max-width:420px;margin:auto}
-label{font-size:11px;font-weight:700;opacity:.6;margin-top:10px;display:block;text-transform:uppercase}
-input,select,textarea{width:100%;margin:6px 0 10px;padding:11px;border-radius:10px;border:1px solid #e0d8cc;font-size:13px}
-button.main{background:#2b2b2b;color:white;border:none;padding:12px;border-radius:12px;width:100%;margin-top:8px;cursor:pointer}
-button.ghost{background:none;border:none;width:100%;margin-top:10px;opacity:.5}
-button.danger{background:#ffe0e0;color:#a00;border:none;padding:10px;border-radius:10px;width:100%;margin-top:10px}
-</style>
-</head>
-<body>
-
-<div id="loader">
-  <div class="wrap">
-    <div class="inside">GUARDAROBA</div>
-    <div class="door left" id="dL"></div>
-    <div class="door right" id="dR"></div>
-  </div>
-  <p style="margin-top:30px;letter-spacing:3px;font-size:12px;opacity:.6">CARICAMENTO...</p>
-</div>
-
-<!-- CONTENITORE SWIPE -->
-<div class="pages" id="pages">
-  <!-- PAGINA 0 - ARMADIO TUO -->
-  <div class="page" id="page0">
-    <div class="h">Il tuo Armadio Virtuale</div>
-    <div class="top-actions">
-      <div class="search"><input id="searchInput" placeholder="Cerca maglione, lana, blu..." oninput="render()"></div>
-      <button class="btn-add" onclick="openModal()">+ Aggiungi capo</button>
-    </div>
-    <div class="bar" id="bar"></div>
-    <div id="sections"></div>
-  </div>
-
-  <!-- PAGINA 1 - MANICHINO -->
-  <div class="page" id="page1">
-    <div class="h">Manichino</div>
-    <p style="padding:0 24px;opacity:.6;font-size:13px">Clicca un capo per vestire il manichino</p>
-    <div style="display:flex;gap:12px;padding:16px 24px">
-      <div style="flex:1;background:white;border-radius:18px;padding:12px;min-height:400px;box-shadow:0 4px 18px #0001" id="mannequinView">Il tuo outfit apparirà qui</div>
-      <div style="flex:1" id="mannequinList"></div>
-    </div>
-  </div>
-
-  <!-- PAGINA 2 - LAVATRICE -->
-  <div class="page" id="page2">
-    <div class="h">Lavatrice</div>
-    <p style="padding:0 24px;opacity:.6;font-size:13px">Raggruppati per lavaggio</p>
-    <div id="lavatriceView" style="padding:12px 24px"></div>
-  </div>
-
-  <!-- PAGINA 3 - VALIGIA -->
-  <div class="page" id="page3">
-    <div class="h">Valigia</div>
-    <div id="valigiaView" style="padding:12px 24px"></div>
-    <div style="padding:0 24px;display:flex;gap:8px;flex-wrap:wrap"><button class="main" style="max-width:200px" onclick="exportValigia()">Esporta lista</button><button class="main" style="max-width:200px" onclick="esportaGuardaroba()">📤 Esporta per telefono</button><label class="main" style="max-width:200px;text-align:center;cursor:pointer">📥 Importa<input type="file" accept=".json" onchange="importaGuardaroba(event)" style="display:none"></label></div>
-  </div>
-</div>
-
-<div class="dots"><div class="dot active" id="dot0"></div><div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div></div>
-
-<div class="dock">
-  <button class="active" onclick="goTo(0)"><span class="icon">👚</span>Armadio</button>
-  <button onclick="goTo(1)"><span class="icon">👗</span>Manichino</button>
-  <button onclick="goTo(2)"><span class="icon">🫧</span>Lavatrice</button>
-  <button onclick="goTo(3)"><span class="icon">🧳</span>Valigia</button>
-</div>
-
-<div id="modal"><div class="box">
-<h3>Nuovo capo</h3>
-<label>Foto capo *</label><input type="file" id="foto" accept="image/*">
-<label>Nome</label><input id="nome" placeholder="es. Maglione blu">
-<label>Categoria</label><select id="cat"><option>Top</option><option>Pantaloni</option><option>Gonne</option><option>Vestiti</option><option>Giacche</option><option>Intimo</option><option>Scarpe</option><option>Accessori</option></select>
-<label>Foto etichetta</label><input type="file" id="fotoEtichetta" accept="image/*">
-<label>Materiali</label><input id="materiali" placeholder="100% lana">
-<label>Lavaggio</label><input id="lavaggio" placeholder="30° mano">
-<label>Note</label><textarea id="note"></textarea>
-<label><input type="checkbox" id="inValigia"> Metti in valigia</label>
-<button class="main" id="saveBtn" onclick="saveItem()">Salva</button>
-<button class="ghost" onclick="closeModal()">Annulla</button>
-</div></div>
-
-<div id="detail"><div class="box" id="detailContent"></div></div>
-
-<script>
-// animazione ante
-setTimeout(()=>{document.getElementById('dL').classList.add('open-left');document.getElementById('dR').classList.add('open-right');},900);
-setTimeout(()=>{document.getElementById('loader').classList.add('hide');setTimeout(()=>document.getElementById('loader').style.display='none',600);},2100);
-
-const CATS=["Maglie","Pantaloni","Gonne","Vestiti","Giacche","Intimo","Calzature","Pigiami"];
-let items=JSON.parse(localStorage.getItem('guardarobaFinale')||'[]');
-let tempCapo=null,tempEtichetta=null, manichino=[];
-let current=0;
-const pagesEl=document.getElementById('pages');
-
-function goTo(i){current=i; pagesEl.style.transform=`translateX(-${i*100}vw)`; document.querySelectorAll('.dock button').forEach((b,idx)=>b.classList.toggle('active',idx===i)); document.querySelectorAll('.dot').forEach((d,idx)=>d.classList.toggle('active',idx===i));}
-// swipe
-let startX=0;
-pagesEl.addEventListener('touchstart',e=>startX=e.touches[0].clientX,{passive:true});
-pagesEl.addEventListener('touchend',e=>{let diff=startX-e.changedTouches[0].clientX; if(Math.abs(diff)>80){ if(diff>0 && current<3) goTo(current+1); if(diff<0 && current>0) goTo(current-1); }});
-let isDown=false, startMouse=0;
-pagesEl.addEventListener('mousedown',e=>{isDown=true; startMouse=e.clientX});
-pagesEl.addEventListener('mouseup',e=>{if(!isDown) return; isDown=false; let d=startMouse-e.clientX; if(Math.abs(d)>80){ if(d>0 && current<3) goTo(current+1); if(d<0 && current>0) goTo(current-1); }});
-
-function toB64(f){return new Promise(r=>{let fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(f);})}
-document.getElementById('foto').addEventListener('change',async e=>{if(e.target.files[0]){document.getElementById('saveBtn').textContent='Caricamento...';tempCapo=await toB64(e.target.files[0]);document.getElementById('saveBtn').textContent='Salva';}});
-document.getElementById('fotoEtichetta').addEventListener('change',async e=>{if(e.target.files[0])tempEtichetta=await toB64(e.target.files[0]);});
+document.getElementById('foto').addEventListener('change',e=>{if(e.target.files[0]){document.getElementById('saveBtn').textContent='Compressione...';comprimiFoto(e.target.files[0], res=>{tempCapo=res; document.getElementById('saveBtn').textContent='Salva';});}});
+document.getElementById('fotoEtichetta').addEventListener('change',e=>{if(e.target.files[0]){comprimiFoto(e.target.files[0], res=>{tempEtichetta=res;});}});
 function getFiltered(){let q=document.getElementById('searchInput').value.toLowerCase().trim();if(!q) return items.map((it,i)=>({...it,orig:i}));return items.map((it,i)=>({...it,orig:i})).filter(it=>`${it.nome} ${it.cat} ${it.materiali} ${it.note} ${it.lavaggio}`.toLowerCase().includes(q));}
-
 function render(){
   let filtered=getFiltered();
   let bar=document.getElementById('bar');bar.innerHTML='';
@@ -178,63 +104,49 @@ function render(){
     let list=filtered.filter(it=>it.cat===cat);
     if(filtered.length>0 && list.length===0 && document.getElementById('searchInput').value) return;
     cont.innerHTML+=`<div class="sec" id="sec-${cat}"><h2>${cat} - ${list.length} capi</h2><div class="row">
-    ${list.map(it=>`<div class="card" onclick="openDetail(${it.orig})"><img src="${it.foto}"><div class="info"><b>${it.nome}</b><br><span style="opacity:.6">${(it.materiali||'').slice(0,20)}</span></div></div>`).join('')}
+    ${list.map(it=>`<div class="card" onclick="openDetail(${it.orig})"><img src="${it.foto}"><div class="info"><b>${it.nome}</b><br><span style="opacity:.6">${(it.materiali||'').slice(0,20)}</span>${it.inValigia?' 🧳':''}</div></div>`).join('')}
     ${list.length===0?`<div style="opacity:.4;font-size:12px;padding:10px">Nessun capo in ${cat}</div>`:''}
     </div></div>`;
   });
   if(filtered.length===0 && document.getElementById('searchInput').value){cont.innerHTML=`<div style="padding:40px;text-align:center;opacity:.5">Nessun risultato per "${document.getElementById('searchInput').value}"</div>`;}
-
-  // MANICHINO LIST
   document.getElementById('mannequinList').innerHTML=items.map((c,i)=>`<div class="card" style="min-width:100%;width:100%;margin-bottom:8px;min-height:auto" onclick="vesta(${i})"><div class="info">${c.nome} - ${c.cat}</div></div>`).join('')||'Vuoto';
-  // LAVATRICE
   let groups={}; items.forEach(c=>{let k=c.lavaggio||'Altro'; if(!groups[k]) groups[k]=[]; groups[k].push(c);});
-  document.getElementById('lavatriceView').innerHTML=Object.entries(groups).map(([k,v])=>`<h3 style="font-size:14px;margin:16px 0 8px">${k} (${v.length})</h3><div class="row">${v.map(c=>`<div class="card"><div class="info">${c.nome}</div></div>`).join('')}</div>`).join('')||'<p style="opacity:.5">Vuoto - aggiungi capi con lavaggio</p>';
-  // VALIGIA
-  document.getElementById('valigiaView').innerHTML=items.filter(c=>c.inValigia).map(c=>`<div class="card" style="min-width:100%;margin-bottom:8px;min-height:auto"><div class="info">${c.nome} - ${c.materiali||c.cat}</div></div>`).join('')||'<p style="opacity:.5">Nessun capo in valigia - spunta "Metti in valigia" quando aggiungi</p>';
+  document.getElementById('lavatriceView').innerHTML=Object.entries(groups).map(([k,v])=>`<h3 style="font-size:14px;margin:16px 0 8px">${k} (${v.length})</h3><div class="row">${v.map(c=>`<div class="card"><img src="${c.foto}" style="height:80px;object-fit:cover;width:100%"><div class="info">${c.nome}</div></div>`).join('')}</div>`).join('')||'<p style="opacity:.5">Vuoto</p>';
+  document.getElementById('valigiaView').innerHTML=items.filter(c=>c.inValigia).map((c,idx)=>{let orig=items.indexOf(c); return `<div class="card" style="min-width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:8px"><img src="${c.foto}" style="width:60px;height:60px;object-fit:cover;border-radius:10px"><div class="info" style="flex:1">${c.nome} - ${c.cat}</div><button onclick="toggleValigia(${orig})" style="border:none;background:#ffe0e0;padding:6px 10px;border-radius:10px">✕</button></div>`}).join('')||'<p style="opacity:.5">Nessun capo in valigia</p>';
 }
-
 function openModal(){document.getElementById('modal').classList.add('open')}
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 async function saveItem(){
   if(!tempCapo){alert('Metti la foto del capo');return}
   let btn=document.getElementById('saveBtn');btn.textContent='Salvataggio...';btn.disabled=true;
-  await new Promise(r=>setTimeout(r,400));
+  await new Promise(r=>setTimeout(r,200));
   items.push({foto:tempCapo,etichetta:tempEtichetta,nome:document.getElementById('nome').value||'Senza nome',cat:document.getElementById('cat').value,materiali:document.getElementById('materiali').value,lavaggio:document.getElementById('lavaggio').value,note:document.getElementById('note').value,inValigia:document.getElementById('inValigia').checked,data:new Date().toLocaleDateString()});
   localStorage.setItem('guardarobaFinale',JSON.stringify(items));btn.textContent='Salva';btn.disabled=false;render();closeModal();
   document.getElementById('nome').value='';document.getElementById('materiali').value='';document.getElementById('lavaggio').value='';document.getElementById('note').value='';document.getElementById('inValigia').checked=false;tempCapo=null;tempEtichetta=null;
 }
-function openDetail(i){let it=items[i];document.getElementById('detailContent').innerHTML=`<img src="${it.foto}" style="width:100%;border-radius:14px"><h2 style="margin:10px 0 4px">${it.nome}</h2><p style="opacity:.6;font-size:12px">${it.cat} • ${it.data}</p><label>Nome</label><input id="eNome" value="${it.nome}"><label>Categoria</label><select id="eCat">${CATS.map(c=>`<option ${c===it.cat?'selected':''}>${c}</option>`).join('')}</select><label>Materiali</label><input id="eMat" value="${it.materiali||''}"><label>Lavaggio</label><input id="eLav" value="${it.lavaggio||''}"><label>Note</label><textarea id="eNote">${it.note||''}</textarea>${it.etichetta?`<label>Etichetta</label><img src="${it.etichetta}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<button class="main" onclick="updateItem(${i})">Salva modifiche</button><button class="ghost" onclick="closeDetail()">Chiudi</button><button class="danger" onclick="deleteItem(${i})">Elimina capo</button>`;document.getElementById('detail').classList.add('open');}
+function openDetail(i){let it=items[i];document.getElementById('detailContent').innerHTML=`<img src="${it.foto}" style="width:100%;border-radius:14px"><h2 style="margin:10px 0 4px">${it.nome}</h2><p style="opacity:.6;font-size:12px">${it.cat} • ${it.data}</p><label>Nome</label><input id="eNome" value="${it.nome}"><label>Categoria</label><select id="eCat">${CATS.map(c=>`<option ${c===it.cat?'selected':''}>${c}</option>`).join('')}</select><label>Materiali</label><input id="eMat" value="${it.materiali||''}"><label>Lavaggio</label><input id="eLav" value="${it.lavaggio||''}"><label>Note</label><textarea id="eNote">${it.note||''}</textarea><label><input type="checkbox" id="eVal" ${it.inValigia?'checked':''}> In valigia</label>${it.etichetta?`<label>Etichetta</label><img src="${it.etichetta}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<button class="main" onclick="updateItem(${i})">Salva modifiche</button><button class="main" style="background:#4caf50" onclick="toggleValigia(${i}); closeDetail();">🧳 Metti/Togli da valigia</button><button class="ghost" onclick="closeDetail()">Chiudi</button><button class="danger" onclick="deleteItem(${i})">Elimina capo</button>`;document.getElementById('detail').classList.add('open');}
 function closeDetail(){document.getElementById('detail').classList.remove('open');}
-function updateItem(i){items[i].nome=document.getElementById('eNome').value;items[i].cat=document.getElementById('eCat').value;items[i].materiali=document.getElementById('eMat').value;items[i].lavaggio=document.getElementById('eLav').value;items[i].note=document.getElementById('eNote').value;localStorage.setItem('guardarobaFinale',JSON.stringify(items));render();closeDetail();}
+function updateItem(i){items[i].nome=document.getElementById('eNome').value;items[i].cat=document.getElementById('eCat').value;items[i].materiali=document.getElementById('eMat').value;items[i].lavaggio=document.getElementById('eLav').value;items[i].note=document.getElementById('eNote').value;items[i].inValigia=document.getElementById('eVal').checked;localStorage.setItem('guardarobaFinale',JSON.stringify(items));render();closeDetail();}
 function deleteItem(i){if(confirm('Eliminare?')){items.splice(i,1);localStorage.setItem('guardarobaFinale',JSON.stringify(items));render();closeDetail();}}
+function toggleValigia(i){items[i].inValigia=!items[i].inValigia;localStorage.setItem('guardarobaFinale',JSON.stringify(items));render();}
 function vesta(i){const c=items[i]; manichino.push(c); document.getElementById('mannequinView').innerHTML=manichino.map(m=>`<div class="card" style="width:100%;margin-bottom:8px"><img src="${m.foto}" style="height:80px"><div class="info">${m.nome}</div></div>`).join('')+'<button onclick="manichino=[];document.getElementById(\'mannequinView\').innerHTML=\'Il tuo outfit apparirà qui\';" class="ghost">Svuota</button>';}
 function exportValigia(){const l=items.filter(c=>c.inValigia).map(c=>`- ${c.nome} (${c.cat})`).join('\n'); alert(l||'Valigia vuota');}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
-  function esportaGuardaroba(){let d=localStorage.getItem('guardarobaFinale');if(!d){alert('Niente da esportare');return;}let b=new Blob([d],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='guardaroba.json';a.click();}
-function importaGuardaroba(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{localStorage.setItem('guardarobaFinale',ev.target.result);alert('Importato!');location.reload();}catch{alert('File non valido');}};r.readAsText(f);}
-document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
-render();
-  async function ottimizzaArmadio(){
+function esportaGuardaroba(){let d=localStorage.getItem('guardarobaFinale');if(!d){alert('Niente da esportare');return;}let b=new Blob([d],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='guardaroba-TUTTO.json';a.click();}
+function importaGuardaroba(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{let arr=JSON.parse(ev.target.result); arr=arr.map(it=>{it.cat=migraCategoria(it.cat); it.foto=it.foto||it.img||it.src||""; return it;}); localStorage.setItem('guardarobaFinale',JSON.stringify(arr));alert('Importato! '+arr.length+' capi');location.reload();}catch{alert('File non valido');}};r.readAsText(f);}
+async function ottimizzaArmadio(){
   let armadio = JSON.parse(localStorage.getItem('guardarobaFinale')||'[]');
   let nuovo = [];
   for(let capo of armadio){
     let src = capo.foto || capo.img || capo.src || '';
     if(src.startsWith('data:image')){
-      let img = await new Promise(res=>{
-        let i = new Image();
-        i.onload = ()=>res(i);
-        i.src = src;
-      });
+      let img = await new Promise(res=>{let i = new Image(); i.onload = ()=>res(i); i.src = src;});
       let c = document.createElement('canvas');
       let max = 500;
       let w = img.width, h = img.height;
-      if(w>h){ if(w>max){ h*=max/w; w=max; } }
-      else{ if(h>max){ w*=max/h; h=max; } }
+      if(w>h){ if(w>max){ h*=max/w; w=max; } } else{ if(h>max){ w*=max/h; h=max; } }
       c.width = w; c.height = h;
       c.getContext('2d').drawImage(img,0,0,w,h);
       capo.foto = c.toDataURL('image/jpeg',0.6);
-      capo.img = capo.foto;
-      capo.src = capo.foto;
     }
     nuovo.push(capo);
   }
@@ -243,28 +155,9 @@ render();
   alert('Fatto! Ora pesa '+kb+'KB');
   location.reload();
 }
-
-function esportaArmadio(){
-  let dati = localStorage.getItem('guardarobaFinale') || '[]';
-  let blob = new Blob([dati], {type:'application/json'});
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'armadio.json';
-  a.click();
-}
-function importaArmadio(event){
-  let file = event.target.files[0];
-  if(!file) return;
-  let r = new FileReader();
-  r.onload = e => {
-    localStorage.setItem('guardarobaFinale', e.target.result);
-    alert('Armadio importato!');
-    location.reload();
-  };
-  r.readAsText(file);
-}
-
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
+render();
 </script>
 </body>
 </html>
-
