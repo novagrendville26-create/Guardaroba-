@@ -193,6 +193,8 @@ function deleteItem(i){if(confirm('Eliminare?')){items.splice(i,1);localStorage.
 function vesta(i){const c=items[i]; manichino.push(c); document.getElementById('mannequinView').innerHTML=manichino.map(m=>`<div class="card" style="width:100%;margin-bottom:8px"><img src="${m.foto}" style="height:80px"><div class="info">${m.nome}</div></div>`).join('')+'<button onclick="manichino=[];document.getElementById(\'mannequinView\').innerHTML=\'Il tuo outfit apparirà qui\';" class="ghost">Svuota</button>';}
 function exportValigia(){const l=items.filter(c=>c.inValigia).map(c=>`- ${c.nome} (${c.cat})`).join('\n'); alert(l||'Valigia vuota');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+  function esportaGuardaroba(){let d=localStorage.getItem('guardarobaFinale');if(!d){alert('Niente da esportare');return;}let b=new Blob([d],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='guardaroba.json';a.click();}
+function importaGuardaroba(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{localStorage.setItem('guardarobaFinale',ev.target.result);alert('Importato!');location.reload();}catch{alert('File non valido');}};r.readAsText(f);}
 document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
 render();
 </script>
