@@ -217,3 +217,28 @@ render();
 </script>
 </body>
 </html>
+async function ottimizzaArmadio(){
+  let armadio = JSON.parse(localStorage.getItem('guardarobaFinale')||'[]');
+  let nuovo = [];
+  for(let capo of armadio){
+    let src = capo.foto || capo.img || capo.src || '';
+    if(src.startsWith('data:image')){
+      let img = await new Promise(res=>{
+        let i=new Image(); i.onload=()=>res(i); i.src=src;
+      });
+      let c=document.createElement('canvas');
+      let max=500; let w=img.width, h=img.height;
+      if(w>h){if(w>max){h*=max/w;w=max;}}else{if(h>max){w*=max/h;h=max;}}
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      capo.foto = c.toDataURL('image/jpeg',0.6);
+      if(capo.img) capo.img = capo.foto;
+      if(capo.src) capo.src = capo.foto;
+    }
+    nuovo.push(capo);
+  }
+  localStorage.setItem('guardarobaFinale', JSON.stringify(nuovo));
+  let kb = Math.round(JSON.stringify(nuovo).length/1024);
+  alert('Fatto! Ora pesa '+kb+'KB. Ora clicca 📤 Esporta ARMADIO');
+  location.reload();
+}
