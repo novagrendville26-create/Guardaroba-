@@ -214,11 +214,7 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='
 function importaGuardaroba(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{localStorage.setItem('guardarobaFinale',ev.target.result);alert('Importato!');location.reload();}catch{alert('File non valido');}};r.readAsText(f);}
 document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
 render();
-
-</script>
-</body>
-</html>
-async function ottimizzaArmadio(){
+  async function ottimizzaArmadio(){
   let armadio = JSON.parse(localStorage.getItem('guardarobaFinale')||'[]');
   let nuovo = [];
   for(let capo of armadio){
@@ -267,3 +263,8 @@ function importaArmadio(event){
   };
   r.readAsText(file);
 }
+
+</script>
+</body>
+</html>
+
