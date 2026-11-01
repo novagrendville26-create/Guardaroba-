@@ -98,7 +98,7 @@ button.danger{background:#ffe0e0;color:#a00;border:none;padding:10px;border-radi
   <div class="page" id="page3">
     <div class="h">Valigia</div>
     <div id="valigiaView" style="padding:12px 24px"></div>
-    <div style="padding:0 24px"><button class="main" style="max-width:200px" onclick="exportValigia()">Esporta lista</button></div>
+    <div style="padding:0 24px;display:flex;gap:8px;flex-wrap:wrap"><button class="main" style="max-width:200px" onclick="exportValigia()">Esporta lista</button><button class="main" style="max-width:200px" onclick="esportaGuardaroba()">📤 Esporta per telefono</button><label class="main" style="max-width:200px;text-align:center;cursor:pointer">📥 Importa<input type="file" accept=".json" onchange="importaGuardaroba(event)" style="display:none"></label></div>
   </div>
 </div>
 
