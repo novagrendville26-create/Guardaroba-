@@ -60,6 +60,11 @@ button.danger{background:#ffe0e0;color:#a00;border:none;padding:10px;border-radi
 setTimeout(()=>{document.getElementById('dL').classList.add('open-left');document.getElementById('dR').classList.add('open-right');},900);
 setTimeout(()=>{document.getElementById('loader').classList.add('hide');setTimeout(()=>document.getElementById('loader').style.display='none',600);},2100);
 const CATS=["Maglie","Pantaloni","Giacche","Intimo","Calzature","Pigiami"];
+  // riempie automaticamente i menu dalle categorie
+function aggiornaMenuCategorie(){
+  let html = CATS.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('cat').innerHTML = html;
+}
 
 let items=JSON.parse(localStorage.getItem('guardarobaFinale')||'[]').map(it=>{it.cat=migraCategoria(it.cat||"Top"); it.foto=it.foto||it.img||it.src||""; return it;});
 let tempCapo=null,tempEtichetta=null, manichino=[];
