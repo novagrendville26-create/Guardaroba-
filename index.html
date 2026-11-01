@@ -38,6 +38,23 @@ body{font-family:system-ui;background:#f8f5f0;color:#222;overflow:hidden;height:
 /* DOCK tipo iPhone */
 .dock{position:fixed;bottom:0;left:0;right:0;height:80px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid #e9e1d5;display:flex;justify-content:space-around;align-items:center;z-index:30;padding-bottom:8px}
 .dock button{border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;opacity:.5;cursor:pointer;transition:.2s}
+  function comprimiFoto(file, cb){
+  let r=new FileReader();
+  r.onload=e=>{
+    let img=new Image();
+    img.onload=()=>{
+      let c=document.createElement('canvas');
+      let max=500;
+      let w=img.width, h=img.height;
+      if(w>h){if(w>max){h*=max/w;w=max;}}else{if(h>max){w*=max/h;h=max;}}
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.6));
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
 .dock button.active{opacity:1;transform:scale(1.15)}
 .dock span.icon{font-size:22px}
 .dots{position:fixed;bottom:85px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:30}
