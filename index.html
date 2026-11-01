@@ -87,7 +87,7 @@ function comprimiFoto(file, cb){
   r.readAsDataURL(file);
 }
 document.getElementById('foto').addEventListener('change',e=>{if(e.target.files[0]){document.getElementById('saveBtn').textContent='Compressione...';comprimiFoto(e.target.files[0], res=>{tempCapo=res; document.getElementById('saveBtn').textContent='Salva';});}});
-document.getElementById('fotoEtichetta').addEventListener('change',e=>{if(e.target.files[0]){comprimiFoto(e.target.files[0], res=>{tempEtichetta=res;});}});
+addEventListener('change',e=>{if(e.target.files[0]){comprimiFoto(e.target.files[0], res=>{tempEtichetta=res;});}});
 function getFiltered(){let q=document.getElementById('searchInput').value.toLowerCase().trim();if(!q) return items.map((it,i)=>({...it,orig:i}));return items.map((it,i)=>({...it,orig:i})).filter(it=>`${it.nome} ${it.cat} ${it.composizione} ${it.note} ${it.lavaggio}`.toLowerCase().includes(q));}
 function render(){
   let filtered=getFiltered();
