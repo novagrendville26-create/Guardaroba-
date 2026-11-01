@@ -54,19 +54,27 @@ button.danger{background:#ffe0e0;color:#a00;border:none;padding:10px;border-radi
 </div>
 <div class="dots"><div class="dot active" id="dot0"></div><div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div></div>
 <div class="dock"><button class="active" onclick="goTo(0)"><span class="icon">👚</span>Armadio</button><button onclick="goTo(1)"><span class="icon">👗</span>Manichino</button><button onclick="goTo(2)"><span class="icon">🫧</span>Lavatrice</button><button onclick="goTo(3)"><span class="icon">🧳</span>Valigia</button></div>
-<div id="modal"><div class="box"><h3>Nuovo capo</h3><label>Foto capo *</label><input type="file" id="foto" accept="image/*"><label>Nome</label><input id="nome" placeholder="es. Maglione blu"><label>Categoria</label><select id="cat"><option>Top</option><option>Pantaloni</option><option>Gonne</option><option>Vestiti</option><option>Giacche</option><option>Intimo</option><option>Scarpe</option><option>Accessori</option></select><label>Foto etichetta</label><input type="file" id="fotoEtichetta" accept="image/*"><label>Materiali</label><input id="materiali" placeholder="100% lana"><label>Lavaggio</label><input id="lavaggio" placeholder="30° mano"><label>Note</label><textarea id="note"></textarea><label><input type="checkbox" id="inValigia"> Metti in valigia</label><button class="main" id="saveBtn" onclick="saveItem()">Salva</button><button class="ghost" onclick="closeModal()">Annulla</button></div></div>
+<div id="modal"><div class="box"><h3>Nuovo capo</h3><label>Foto capo *</label><input type="file" id="foto" accept="image/*"><label>Nome</label><input id="nome" placeholder="es. Maglione blu"><label>Categoria</label><select id="cat"></select><label>Foto etichetta</label><input type="file" id="fotoEtichetta" accept="image/*"><label>Materiali</label><input id="materiali" placeholder="100% lana"><label>Lavaggio</label><input id="lavaggio" placeholder="30° mano"><label>Note</label><textarea id="note"></textarea><label><input type="checkbox" id="inValigia"> Metti in valigia</label><button class="main" id="saveBtn" onclick="saveItem()">Salva</button><button class="ghost" onclick="closeModal()">Annulla</button></div></div>
 <div id="detail"><div class="box" id="detailContent"></div></div>
 <script>
 setTimeout(()=>{document.getElementById('dL').classList.add('open-left');document.getElementById('dR').classList.add('open-right');},900);
 setTimeout(()=>{document.getElementById('loader').classList.add('hide');setTimeout(()=>document.getElementById('loader').style.display='none',600);},2100);
+
 const CATS=["Maglie","Pantaloni","Giacche","Intimo","Calzature","Pigiami"];
-  // riempie automaticamente i menu dalle categorie
+
+function migraCategoria(old){
+  if(!old) return CATS[0];
+  if(CATS.includes(old)) return old;
+  let m = { "Top":"Maglie", "Gonne":"Pigiami", "Vestiti":"Maglie", "Scarpe":"Calzature", "Accessori":"Pigiami" };
+  return m[old] || CATS[0];
+}
+
 function aggiornaMenuCategorie(){
   let html = CATS.map(c=>`<option>${c}</option>`).join('');
   document.getElementById('cat').innerHTML = html;
 }
 
-let items=JSON.parse(localStorage.getItem('guardarobaFinale')||'[]').map(it=>{it.cat=migraCategoria(it.cat||"Top"); it.foto=it.foto||it.img||it.src||""; return it;});
+let items=JSON.parse(localStorage.getItem('guardarobaFinale')||'[]').map(it=>{it.cat=migraCategoria(it.cat||CATS[0]); it.foto=it.foto||it.img||it.src||""; return it;});
 let tempCapo=null,tempEtichetta=null, manichino=[];
 let current=0;
 const pagesEl=document.getElementById('pages');
@@ -92,8 +100,9 @@ function comprimiFoto(file, cb){
   r.readAsDataURL(file);
 }
 document.getElementById('foto').addEventListener('change',e=>{if(e.target.files[0]){document.getElementById('saveBtn').textContent='Compressione...';comprimiFoto(e.target.files[0], res=>{tempCapo=res; document.getElementById('saveBtn').textContent='Salva';});}});
-addEventListener('change',e=>{if(e.target.files[0]){comprimiFoto(e.target.files[0], res=>{tempEtichetta=res;});}});
-function getFiltered(){let q=document.getElementById('searchInput').value.toLowerCase().trim();if(!q) return items.map((it,i)=>({...it,orig:i}));return items.map((it,i)=>({...it,orig:i})).filter(it=>`${it.nome} ${it.cat} ${it.composizione} ${it.note} ${it.lavaggio}`.toLowerCase().includes(q));}
+document.getElementById('fotoEtichetta').addEventListener('change',e=>{if(e.target.files[0]){comprimiFoto(e.target.files[0], res=>{tempEtichetta=res;});}});
+
+function getFiltered(){let q=document.getElementById('searchInput').value.toLowerCase().trim();if(!q) return items.map((it,i)=>({...it,orig:i}));return items.map((it,i)=>({...it,orig:i})).filter(it=>`${it.nome} ${it.cat} ${it.materiali} ${it.note} ${it.lavaggio}`.toLowerCase().includes(q));}
 function render(){
   let filtered=getFiltered();
   let bar=document.getElementById('bar');bar.innerHTML='';
@@ -111,7 +120,7 @@ function render(){
   document.getElementById('mannequinList').innerHTML=items.map((c,i)=>`<div class="card" style="min-width:100%;width:100%;margin-bottom:8px;min-height:auto" onclick="vesta(${i})"><div class="info">${c.nome} - ${c.cat}</div></div>`).join('')||'Vuoto';
   let groups={}; items.forEach(c=>{let k=c.lavaggio||'Altro'; if(!groups[k]) groups[k]=[]; groups[k].push(c);});
   document.getElementById('lavatriceView').innerHTML=Object.entries(groups).map(([k,v])=>`<h3 style="font-size:14px;margin:16px 0 8px">${k} (${v.length})</h3><div class="row">${v.map(c=>`<div class="card"><img src="${c.foto}" style="height:80px;object-fit:cover;width:100%"><div class="info">${c.nome}</div></div>`).join('')}</div>`).join('')||'<p style="opacity:.5">Vuoto</p>';
-  document.getElementById('valigiaView').innerHTML=items.filter(c=>c.inValigia).map((c,idx)=>{let orig=items.indexOf(c); return `<div class="card" style="min-width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:8px"><img src="${c.foto}" style="width:60px;height:60px;object-fit:cover;border-radius:10px"><div class="info" style="flex:1">${c.nome} - ${c.cat}</div><button onclick="toggleValigia(${orig})" style="border:none;background:#ffe0e0;padding:6px 10px;border-radius:10px">✕</button></div>`}).join('')||'<p style="opacity:.5">Nessun capo in valigia</p>';
+  document.getElementById('valigiaView').innerHTML=items.filter(c=>c.inValigia).map((c)=>{let orig=items.indexOf(c); return `<div class="card" style="min-width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:8px"><img src="${c.foto}" style="width:60px;height:60px;object-fit:cover;border-radius:10px"><div class="info" style="flex:1">${c.nome} - ${c.cat}</div><button onclick="toggleValigia(${orig})" style="border:none;background:#ffe0e0;padding:6px 10px;border-radius:10px">✕</button></div>`}).join('')||'<p style="opacity:.5">Nessun capo in valigia</p>';
 }
 function openModal(){document.getElementById('modal').classList.add('open')}
 function closeModal(){document.getElementById('modal').classList.remove('open')}
@@ -156,8 +165,9 @@ async function ottimizzaArmadio(){
 }
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
+
+aggiornaMenuCategorie();
 render();
-  aggiornaMenuCategorie();
 </script>
 </body>
 </html>
