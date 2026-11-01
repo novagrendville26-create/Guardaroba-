@@ -214,6 +214,7 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='
 function importaGuardaroba(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{localStorage.setItem('guardarobaFinale',ev.target.result);alert('Importato!');location.reload();}catch{alert('File non valido');}};r.readAsText(f);}
 document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail()});
 render();
+
 </script>
 </body>
 </html>
@@ -224,21 +225,45 @@ async function ottimizzaArmadio(){
     let src = capo.foto || capo.img || capo.src || '';
     if(src.startsWith('data:image')){
       let img = await new Promise(res=>{
-        let i=new Image(); i.onload=()=>res(i); i.src=src;
+        let i = new Image();
+        i.onload = ()=>res(i);
+        i.src = src;
       });
-      let c=document.createElement('canvas');
-      let max=500; let w=img.width, h=img.height;
-      if(w>h){if(w>max){h*=max/w;w=max;}}else{if(h>max){w*=max/h;h=max;}}
-      c.width=w; c.height=h;
+      let c = document.createElement('canvas');
+      let max = 500;
+      let w = img.width, h = img.height;
+      if(w>h){ if(w>max){ h*=max/w; w=max; } }
+      else{ if(h>max){ w*=max/h; h=max; } }
+      c.width = w; c.height = h;
       c.getContext('2d').drawImage(img,0,0,w,h);
       capo.foto = c.toDataURL('image/jpeg',0.6);
-      if(capo.img) capo.img = capo.foto;
-      if(capo.src) capo.src = capo.foto;
+      capo.img = capo.foto;
+      capo.src = capo.foto;
     }
     nuovo.push(capo);
   }
   localStorage.setItem('guardarobaFinale', JSON.stringify(nuovo));
   let kb = Math.round(JSON.stringify(nuovo).length/1024);
-  alert('Fatto! Ora pesa '+kb+'KB. Ora clicca 📤 Esporta ARMADIO');
+  alert('Fatto! Ora pesa '+kb+'KB');
   location.reload();
+}
+
+function esportaArmadio(){
+  let dati = localStorage.getItem('guardarobaFinale') || '[]';
+  let blob = new Blob([dati], {type:'application/json'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'armadio.json';
+  a.click();
+}
+function importaArmadio(event){
+  let file = event.target.files[0];
+  if(!file) return;
+  let r = new FileReader();
+  r.onload = e => {
+    localStorage.setItem('guardarobaFinale', e.target.result);
+    alert('Armadio importato!');
+    location.reload();
+  };
+  r.readAsText(file);
 }
